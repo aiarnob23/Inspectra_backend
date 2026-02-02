@@ -1,0 +1,26 @@
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: node_prisma_oop
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aiarnob23
+      POSTGRES_PASSWORD: aiarnob23
+      POSTGRES_DB: node_prisma_oop
+    ports:
+      - "6666:5432" 
+    volumes:
+      - node_prisma_oop:/var/lib/postgresql/data
+    networks:
+      - node_prisma_oop
+
+networks:
+  node_prisma_oop:
+    driver: bridge
+    name: node_prisma_oop
+
+volumes:
+  node_prisma_oop:
+    driver: local
+    name: node_prisma_oop
