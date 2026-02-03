@@ -1,5 +1,5 @@
 {
-  "name": "practise",
+  "name": "inspectra",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -8,7 +8,7 @@
     "@types/bun": "latest",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.1",
-    "prisma": "^7.1.0"
+    "prisma": "^7.3.0"
   },
   "scripts": {
     "dev": "NODE_ENV=development bun run --watch src/index.ts",
@@ -29,7 +29,7 @@
     "@aws-sdk/lib-storage": "^3.891.0",
     "@aws-sdk/s3-request-presigner": "^3.891.0",
     "@prisma/adapter-pg": "^7.1.0",
-    "@prisma/client": "^7.1.0",
+    "@prisma/client": "^7.3.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",

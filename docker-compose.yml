@@ -2,25 +2,25 @@
 services:
   postgres:
     image: postgres:17
-    container_name: node_prisma_oop
+    container_name: inspectra
     restart: unless-stopped
     environment:
       POSTGRES_USER: aiarnob23
       POSTGRES_PASSWORD: aiarnob23
-      POSTGRES_DB: node_prisma_oop
+      POSTGRES_DB: inspectra
     ports:
-      - "6666:5432" 
+      - "6667:5432" 
     volumes:
-      - node_prisma_oop:/var/lib/postgresql/data
+      - inspectra:/var/lib/postgresql/data
     networks:
-      - node_prisma_oop
+      - inspectra
 
 networks:
-  node_prisma_oop:
+  inspectra:
     driver: bridge
-    name: node_prisma_oop
+    name: inspectra
 
 volumes:
-  node_prisma_oop:
+  inspectra:
     driver: local
-    name: node_prisma_oop
+    name: inspectra

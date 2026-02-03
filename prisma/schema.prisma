@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -13,8 +12,9 @@ datasource db {
 // --------------------------------------
 
 enum UserRole {
-  admin
-  user
+  admin //platform owner
+  subscriber //company owner / manager
+  employee //employee
 }
 
 enum AccountStatus {
@@ -31,46 +31,149 @@ enum OTPType {
   two_factor
 }
 
+enum SubscriptionPlanType {
+  basic
+  pro
+  enterprise
+}
 
-//----------------------------------
-// MODELS
-//----------------------------------
+enum SubscriptionStatus {
+  active
+  expired
+  cancelled
+  suspended
+}
+
+enum PlanFeatureKeys {
+  email_reminder
+  sms_reminder
+  analytics
+  csv_upload
+}
+
+enum InspectionFrequency {
+  one_time
+  weekly
+  monthly
+  quarterly
+  yearly
+}
+
+enum InspectionStatus {
+  pending
+  completed
+  missed
+  recheduled
+}
+
+//
+// --------------------------------------
+// AUTH MODELS
+// --------------------------------------
+//
 
 model User {
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email String @unique
-  username String? @unique
-  firstName String 
-  lastName String?
-  displayName String?
-  role UserRole @default(user)
-  status AccountStatus @default(pending_verification)
-  password String
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String        @unique
+  username        String?       @unique
+  firstName       String
+  lastName        String?
+  displayName     String?
+  role            UserRole      @default(subscriber)
+  status          AccountStatus @default(pending_verification)
+  password        String
   emailVerifiedAt DateTime?
-  avatarUrl String?
+  avatarUrl       String?
 
   //---LMS fields ---
-  isDeleted Boolean @default(false)
+  isDeleted   Boolean   @default(false)
   lastLoginAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  deletedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+  deletedAt   DateTime?
 
   otps OTP[]
 }
 
-model OTP{
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+model OTP {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   identifier String
-  code Int
-  type OTPType
-  expiresAt DateTime
-  verified Boolean @default(false)
-  attempts Int @default(0)
-  userId String? @db.Uuid
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user User? @relation(fields: [userId] , references: [id], onDelete: SetNull)
+  code       Int
+  type       OTPType
+  expiresAt  DateTime
+  verified   Boolean  @default(false)
+  attempts   Int      @default(0)
+  userId     String?  @db.Uuid
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
+// =====================================================
+// SUBSCRIPTION & ACCESS CONTROL
+// =====================================================
+model Plan {
+  id    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type  SubscriptionPlanType
+  price Float
 
+  maxClients   Int?
+  maxEmployees Int?
+  maxAssets    Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  features PlanFeature[] //FOR NEW USERS
+
+  memberships Membership[]
+}
+
+model Feature {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         PlanFeatureKeys
+  name        String
+  description String?
+
+  plans      PlanFeature[]
+  membersips MembershipFeature[]
+}
+
+model PlanFeature {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  planId    String
+  featureId String
+  enabled   Boolean @default(true)
+
+  plan    Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, featureId])
+}
+
+//Membership Model (FOR EXISTING USERS)
+model Membership {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriberId String @unique @db.Uuid
+  planId       String @db.Uuid
+
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+
+  //subscriber Subscriber @relation(fields: [subscriberId], references: [id])
+  plan     Plan                @relation(fields: [planId], references: [id])
+  features MembershipFeature[]
+}
+
+model MembershipFeature {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId String     @db.Uuid
+  featureId    String     @db.Uuid
+  enabled      Boolean    @default(true)
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  feature      Feature    @relation(fields: [featureId], references: [id])
+
+  @@unique([membershipId, featureId])
+}
