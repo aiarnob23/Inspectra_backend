@@ -15,6 +15,7 @@ enum UserRole {
   admin //platform owner
   subscriber //company owner / manager
   employee //employee
+  user //temp
 }
 
 enum AccountStatus {
@@ -153,13 +154,13 @@ model Feature {
   description String?
 
   plans      PlanFeature[]
-  membersips MembershipFeature[]
+  memberships MembershipFeature[]
 }
 
 model PlanFeature {
   id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  planId    String
-  featureId String
+  planId    String @db.Uuid
+  featureId String @db.Uuid
   enabled   Boolean @default(true)
 
   plan    Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)

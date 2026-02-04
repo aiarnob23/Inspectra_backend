@@ -75,6 +75,8 @@ export abstract class BaseModule implements IgnitorModule {
         // 
     }
 
+
+
     /**
      * Get the router instance for this module
      */

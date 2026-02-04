@@ -127,6 +127,7 @@ export class IgnitorApp {
             '/health',
             asyncHandler(async (req: Request, res: Response) => {
                 try {
+                    // SYSTEM HEALTH
                     // Check database connection
                     await prisma.$queryRaw`SELECT 1`;
 
