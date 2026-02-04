@@ -217,8 +217,8 @@ model Subscriber {
   address     String?
   phone       String?
 
-  ownerId String @unique @db.Uuid
-  owner   User   @relation(fields: [ownerId], references: [id])
+  userId String @unique @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
 
   membership Membership?
 

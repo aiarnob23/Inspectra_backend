@@ -17,6 +17,12 @@ export interface RequestWithUser extends Request {
     user?: JWTPayload;
     userId?: string;
     userRole?: string;
+    subscriberId?: string;
+    membership?: {
+        planType: string;
+        expiresAt?: Date;
+        features: string[];
+    };
 }
 
 /**
@@ -178,7 +184,7 @@ export const optionalAuth = (req: RequestWithUser, res: Response, next: NextFunc
             requestId: (req as any).id,
         });
     } catch {
-       
+
     }
 
     next();
