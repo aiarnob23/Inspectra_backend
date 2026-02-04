@@ -44,11 +44,25 @@ enum SubscriptionStatus {
   suspended
 }
 
+enum SubscriptionCancelReason {
+  upgrade
+  downgrade
+  expired
+  cancelled
+}
+
 enum PlanFeatureKeys {
   email_reminder
   sms_reminder
   analytics
   csv_upload
+}
+
+enum PaymentStatus {
+  pending
+  success
+  failed
+  refunded
 }
 
 enum InspectionFrequency {
@@ -63,7 +77,7 @@ enum InspectionStatus {
   pending
   completed
   missed
-  recheduled
+  rescheduled
 }
 
 //
@@ -92,7 +106,8 @@ model User {
   updatedAt   DateTime  @default(now()) @updatedAt
   deletedAt   DateTime?
 
-  otps OTP[]
+  otps       OTP[]
+  subscriber Subscriber?
 }
 
 model OTP {
@@ -111,7 +126,7 @@ model OTP {
 }
 
 // =====================================================
-// SUBSCRIPTION & ACCESS CONTROL
+// SUBSCRIPTION , MEMBERSHIP  & ACCESS CONTROL
 // =====================================================
 model Plan {
   id    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -125,9 +140,10 @@ model Plan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  features PlanFeature[] //FOR NEW USERS
-
-  memberships Membership[]
+  features            PlanFeature[] //for new subscriber's
+  memberships         Membership[]
+  membershipHistories MembershipHistory[]
+  payments            Payment[]
 }
 
 model Feature {
@@ -152,7 +168,6 @@ model PlanFeature {
   @@unique([planId, featureId])
 }
 
-//Membership Model (FOR EXISTING USERS)
 model Membership {
   id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   subscriberId String @unique @db.Uuid
@@ -162,18 +177,187 @@ model Membership {
   endDate   DateTime?
   isActive  Boolean   @default(true)
 
-  //subscriber Subscriber @relation(fields: [subscriberId], references: [id])
-  plan     Plan                @relation(fields: [planId], references: [id])
-  features MembershipFeature[]
+  subscriber Subscriber          @relation(fields: [subscriberId], references: [id])
+  plan       Plan                @relation(fields: [planId], references: [id])
+  features   MembershipFeature[] //snapshot -> existing subscriber's features
 }
 
 model MembershipFeature {
-  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  membershipId String     @db.Uuid
-  featureId    String     @db.Uuid
-  enabled      Boolean    @default(true)
-  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  feature      Feature    @relation(fields: [featureId], references: [id])
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId String  @db.Uuid
+  featureId    String  @db.Uuid
+  enabled      Boolean @default(true)
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  feature    Feature    @relation(fields: [featureId], references: [id])
 
   @@unique([membershipId, featureId])
+}
+
+model MembershipHistory {
+  id           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriberId String                   @db.Uuid
+  planId       String                   @db.Uuid
+  startDate    DateTime
+  endDate      DateTime
+  reason       SubscriptionCancelReason
+
+  subscriber Subscriber @relation(fields: [subscriberId], references: [id])
+  plan       Plan       @relation(fields: [planId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([subscriberId])
+}
+
+model Subscriber {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyName String?
+  address     String?
+  phone       String?
+
+  ownerId String @unique @db.Uuid
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  membership Membership?
+
+  clients     Client[]
+  employees   Employee[]
+  assets      Asset[]
+  inspections Inspection[]
+  payments    Payment[]
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  membershipHistories MembershipHistory[]
+}
+
+// =====================================================
+// PAYMENT
+// =====================================================
+model Payment {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriberId String @db.Uuid
+  planId       String @db.Uuid
+
+  amount   Float
+  currency String        @default("BDT")
+  provider String //stripe | sslcommerz
+  status   PaymentStatus @default(pending)
+
+  transactionId String?
+  paidAt        DateTime?
+
+  subscriber Subscriber @relation(fields: [subscriberId], references: [id])
+  plan       Plan       @relation(fields: [planId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// =====================================================
+// CLIENT , ASSET & EMPLOYEE
+// =====================================================
+
+model Client {
+  id      String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name    String
+  email   String?
+  phone   String?
+  address String?
+
+  subscriberId String     @db.Uuid
+  subscriber   Subscriber @relation(fields: [subscriberId], references: [id])
+
+  assets Asset[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  inspections Inspection[]
+}
+
+model Asset {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  type         String
+  serialNumber String?
+
+  clientId     String @db.Uuid
+  subscriberId String @db.Uuid
+
+  client     Client     @relation(fields: [clientId], references: [id])
+  subscriber Subscriber @relation(fields: [subscriberId], references: [id])
+
+  inspections Inspection[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Employee {
+  id    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  e_id  String?
+  name  String?
+  email String?
+  phone String?
+
+  subscriberId String     @db.Uuid
+  subscriber   Subscriber @relation(fields: [subscriberId], references: [id])
+
+  assignments InspectionAssignment[]
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  inspectionReports InspectionReport[]
+}
+
+// =====================================================
+// INSPECTION & REPORTING
+// =====================================================
+model Inspection {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  subscriberId String @db.Uuid
+  clientId     String @db.Uuid
+  assetId      String @db.Uuid
+
+  frequency InspectionFrequency
+  status    InspectionStatus    @default(pending)
+
+  scheduledAt DateTime
+  nextDueAt   DateTime?
+
+  subscriber Subscriber @relation(fields: [subscriberId], references: [id])
+  client     Client     @relation(fields: [clientId], references: [id])
+  asset      Asset      @relation(fields: [assetId], references: [id])
+
+  assignments InspectionAssignment[]
+  reports     InspectionReport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InspectionAssignment {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inspectionId String @db.Uuid
+  employeeId   String @db.Uuid
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  employee   Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([inspectionId, employeeId])
+}
+
+model InspectionReport {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inspectionId String @db.Uuid
+  uploadedById String @db.Uuid
+
+  fileUrl String
+  remarks String?
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id])
+  uploadedBy Employee   @relation(fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
 }
