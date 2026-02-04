@@ -25,6 +25,31 @@ export class PlanRoutes {
             }),
             asyncHandler((req: Request, res: Response) => this.planController.create(req, res))
         );
+
+        //Get all plan
+        this.router.get(
+            "/",
+            asyncHandler((req, res) => this.planController.getAll(req, res))
+        );
+
+        // Get by id
+        this.router.get(
+            "/:id",
+            asyncHandler((req, res) => this.planController.getOne(req, res))
+        );
+
+        // UPDATE
+        this.router.patch(
+            "/:id",
+            validateRequest({ body: PlanValidation.createPlan.partial() }),
+            asyncHandler((req, res) => this.planController.update(req, res))
+        );
+
+        // DELETE
+        this.router.delete(
+            "/:id",
+            asyncHandler((req, res) => this.planController.delete(req, res))
+        );
     }
 
     public getRouter(): Router {

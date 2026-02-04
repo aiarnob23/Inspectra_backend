@@ -1,8 +1,9 @@
 import { BaseService } from "@/core/BaseService";
 import { Feature, PrismaClient } from "@/generated/prisma";
-import { createFeatureInput } from "./plan.validation";
 import { ConflictError } from "@/core/errors/AppError";
 import { AppLogger } from "@/core/ logging/logger";
+import { CreateFeatureInput } from "./feature.validation";
+
 
 export class FeatureService extends BaseService<Feature> {
     constructor(prisma: PrismaClient) {
@@ -20,7 +21,7 @@ export class FeatureService extends BaseService<Feature> {
       * Create a new feature (admin only)
       */
     async createFeature(
-        data: createFeatureInput
+        data: CreateFeatureInput
     ): Promise<{ message: string }> {
         const { key, name, description } = data;
 
@@ -57,4 +58,42 @@ export class FeatureService extends BaseService<Feature> {
             { key: "asc" }
         );
     }
+
+    /**
+ * Get feature by id
+ */
+    async getFeatureById(id: string) {
+        const feature = await this.findById(id);
+        if (!feature) {
+            throw new ConflictError("Feature not found");
+        }
+        return feature;
+    }
+
+    /**
+     * Update feature
+     */
+    async updateFeature(
+        id: string,
+        data: Partial<CreateFeatureInput>
+    ): Promise<{ message: string }> {
+
+        await this.getFeatureById(id);
+
+        await this.updateById(id, data);
+
+        return { message: "Feature updated successfully" };
+    }
+
+    /**
+     * Delete feature
+     */
+    async deleteFeature(id: string): Promise<{ message: string }> {
+        await this.getFeatureById(id);
+
+        await this.deleteById(id);
+
+        return { message: "Feature deleted successfully" };
+    }
+
 }

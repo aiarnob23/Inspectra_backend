@@ -1,6 +1,5 @@
 import { BaseModule } from "@/core/BaseModule";
 import { PlanService } from "./plan.service";
-import { FeatureService } from "./feature.service";
 import { PlanController } from "./plan.controller";
 import { PlanRoutes } from "./plan.route";
 import { AppLogger } from "@/core/ logging/logger";
@@ -16,18 +15,16 @@ export class PlanModule extends BaseModule {
 
   protected async setupServices() {
     this.planService = new PlanService(this.context.prisma);
-    // this.featureService = new FeatureService(this.context.prisma);
-
     AppLogger.info("PlanModule services initialized");
   }
 
-  protected async setupRoutes() {
-    const controller = new PlanController(
-      this.planService,
-    //   this.featureService
-    );
-    const routes = new PlanRoutes(controller);
+  protected async setupRoutes():Promise<void>{
+    this.planController = new PlanController(this.planService);
+    AppLogger.info('PlanControlelr initialized successfully');
 
-    this.router.use("/api/plan", routes.getRouter());
+    this.planRoutes = new PlanRoutes(this.planController);
+    AppLogger.info('PlanRoutes initialized successfully');
+
+    this.router.use('/api/plan', this.planRoutes.getRouter());
   }
 }

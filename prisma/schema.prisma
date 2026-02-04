@@ -255,7 +255,8 @@ model Payment {
 model Client {
   id      String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name    String
-  email   String?
+  company String?
+  email   String
   phone   String?
   address String?
 
@@ -266,6 +267,7 @@ model Client {
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
   inspections Inspection[]
 }
 

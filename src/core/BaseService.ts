@@ -109,6 +109,28 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
         }
     }
 
+    //delete by id
+    protected async deleteById(id: string | number): Promise<TModel> {
+        try {
+            if (this.options.enableSoftDelete) return await this.softDelete(id);
+            return await this.getModel().delete({ where: { id } });
+        } catch (error) {
+            return this.handleDatabaseError(error, 'deleteById');
+        }
+    }
+
+    //soft delete
+    protected async softDelete(id: string | number): Promise<TModel> {
+        try {
+            return await this.getModel().update({
+                where: { id },
+                data: { deletedAt: new Date(), isDeleted: true },
+            });
+        } catch (error) {
+            return this.handleDatabaseError(error, 'softDelete');
+        }
+    }
+
     //-------------handle database error------------------------------------//
     private handleDatabaseError(error: any, operation: string): never {
         AppLogger.error(`Database error in ${this.modelName}.${operation}`, { error });
