@@ -3,6 +3,7 @@ import { AppLogger } from './core/ logging/logger';
 import { IgnitorApp } from './core/IgnitorApp';
 import { config } from './core/config';
 import { AuthModule } from './modules/Auth/AuthModule';
+import { PlanModule } from './modules/Membership-Plan/PlanModule';
 
 // Main application bootstrap function
 async function bootstrap() {
@@ -15,6 +16,7 @@ async function bootstrap() {
 
         // Register application modules
         app.registerModule(new AuthModule());
+        app.registerModule(new PlanModule());
 
         // Register application modules
         AppLogger.info('✅ All modules registered successfully');

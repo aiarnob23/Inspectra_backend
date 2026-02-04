@@ -52,13 +52,6 @@ enum SubscriptionCancelReason {
   cancelled
 }
 
-enum PlanFeatureKeys {
-  email_reminder
-  sms_reminder
-  analytics
-  csv_upload
-}
-
 enum PaymentStatus {
   pending
   success
@@ -149,7 +142,7 @@ model Plan {
 
 model Feature {
   id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key         PlanFeatureKeys
+  key         String
   name        String
   description String?
 

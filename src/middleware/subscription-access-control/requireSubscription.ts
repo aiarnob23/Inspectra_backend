@@ -1,6 +1,6 @@
 import { PrismaClient } from "@/generated/prisma";
 import { NextFunction, Response } from "express";
-import { RequestWithUser } from "./auth";
+import { RequestWithUser } from "../auth";
 import { AuthenticationError, AuthorizationError } from "@/core/errors/AppError";
 
 const prisma = new PrismaClient();
