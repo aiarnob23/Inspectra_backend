@@ -2,6 +2,7 @@
 import { AppLogger } from './core/ logging/logger';
 import { IgnitorApp } from './core/IgnitorApp';
 import { config } from './core/config';
+import { AssetModule } from './modules/Asset/AssetModule';
 import { AuthModule } from './modules/Auth/AuthModule';
 import { ClientModule } from './modules/Client/ClientModule';
 import { EmployeeModule } from './modules/Employee/EmployeeModule';
@@ -23,6 +24,7 @@ async function bootstrap() {
         app.registerModule(new PlanModule());
         app.registerModule(new ClientModule());
         app.registerModule(new EmployeeModule());
+        app.registerModule(new AssetModule());
 
         // Register application modules
         AppLogger.info('✅ All modules registered successfully');

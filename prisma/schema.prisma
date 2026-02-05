@@ -275,7 +275,10 @@ model Asset {
   id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name         String
   type         String
+  model        String
   serialNumber String?
+  description  String?
+  location     String
 
   clientId     String @db.Uuid
   subscriberId String @db.Uuid
@@ -287,6 +290,7 @@ model Asset {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 }
 
 model Employee {
