@@ -142,7 +142,7 @@ model Plan {
 
 model Feature {
   id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key         String
+  key         String          @unique
   name        String
   description String?
 
