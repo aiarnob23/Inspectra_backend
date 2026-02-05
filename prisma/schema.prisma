@@ -80,6 +80,12 @@ enum InspectionStatus {
   rescheduled
 }
 
+enum ReminderMethod {
+  email
+  sms
+  both
+}
+
 //
 // --------------------------------------
 // AUTH MODELS
@@ -341,9 +347,30 @@ model Inspection {
 
   assignments InspectionAssignment[]
   reports     InspectionReport[]
+  reminder Reminder[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+}
+
+model Reminder {
+  id           String @id @default(dbgenerated("gen_random_uuid")) @db.Uuid
+  inspectionId String @db.Uuid
+
+  method   ReminderMethod
+  additionalNotes String?
+  isSent Boolean      @default(false)
+  sentAt DateTime?
+
+  attempts   Int       @default(0)
+  failedAt   DateTime?
+  failReason String?
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime   @default(now())
+
+  @@index([isSent])
 }
 
 model InspectionAssignment {
