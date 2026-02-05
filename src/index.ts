@@ -4,6 +4,7 @@ import { IgnitorApp } from './core/IgnitorApp';
 import { config } from './core/config';
 import { AuthModule } from './modules/Auth/AuthModule';
 import { ClientModule } from './modules/Client/ClientModule';
+import { EmployeeModule } from './modules/Employee/EmployeeModule';
 import { FeatureModule } from './modules/Membership-Plan/Feature/featureModule';
 import { PlanModule } from './modules/Membership-Plan/Plan/PlanModule';
 
@@ -21,6 +22,7 @@ async function bootstrap() {
         app.registerModule(new FeatureModule());
         app.registerModule(new PlanModule());
         app.registerModule(new ClientModule());
+        app.registerModule(new EmployeeModule());
 
         // Register application modules
         AppLogger.info('✅ All modules registered successfully');

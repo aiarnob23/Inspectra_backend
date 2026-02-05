@@ -15,7 +15,7 @@ export class ClientController extends BaseController {
    */
     public createClient = async (req: Request, res: Response) => {
         const rawBody = req.validatedBody || req.body;
-        const userId = req.userId || "40e80625-6432-44b1-8f5b-1ebe1280c926";
+        const userId = req.userId;
         const client = { ...rawBody, subscriberId: userId }
         this.logAction('create', req, client)
         const result = await this.clientService.createClient(client);

@@ -1,4 +1,13 @@
 -- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('admin', 'subscriber', 'employee', 'user');
+
+-- CreateEnum
+CREATE TYPE "AccountStatus" AS ENUM ('active', 'inactive', 'suspended', 'pending_verification');
+
+-- CreateEnum
+CREATE TYPE "OTPType" AS ENUM ('email_verification', 'login_verification', 'password_reset', 'two_factor');
+
+-- CreateEnum
 CREATE TYPE "SubscriptionPlanType" AS ENUM ('basic', 'pro', 'enterprise');
 
 -- CreateEnum
@@ -6,9 +15,6 @@ CREATE TYPE "SubscriptionStatus" AS ENUM ('active', 'expired', 'cancelled', 'sus
 
 -- CreateEnum
 CREATE TYPE "SubscriptionCancelReason" AS ENUM ('upgrade', 'downgrade', 'expired', 'cancelled');
-
--- CreateEnum
-CREATE TYPE "PlanFeatureKeys" AS ENUM ('email_reminder', 'sms_reminder', 'analytics', 'csv_upload');
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('pending', 'success', 'failed', 'refunded');
@@ -19,19 +25,43 @@ CREATE TYPE "InspectionFrequency" AS ENUM ('one_time', 'weekly', 'monthly', 'qua
 -- CreateEnum
 CREATE TYPE "InspectionStatus" AS ENUM ('pending', 'completed', 'missed', 'rescheduled');
 
--- AlterEnum
--- This migration adds more than one value to an enum.
--- With PostgreSQL versions 11 and earlier, this is not possible
--- in a single migration. This can be worked around by creating
--- multiple migrations, each migration adding only one value to
--- the enum.
+-- CreateTable
+CREATE TABLE "User" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "email" TEXT NOT NULL,
+    "username" TEXT,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT,
+    "displayName" TEXT,
+    "role" "UserRole" NOT NULL DEFAULT 'subscriber',
+    "status" "AccountStatus" NOT NULL DEFAULT 'pending_verification',
+    "password" TEXT NOT NULL,
+    "emailVerifiedAt" TIMESTAMP(3),
+    "avatarUrl" TEXT,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "lastLoginAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deletedAt" TIMESTAMP(3),
 
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
 
-ALTER TYPE "UserRole" ADD VALUE 'subscriber';
-ALTER TYPE "UserRole" ADD VALUE 'employee';
+-- CreateTable
+CREATE TABLE "OTP" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "identifier" TEXT NOT NULL,
+    "code" INTEGER NOT NULL,
+    "type" "OTPType" NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "verified" BOOLEAN NOT NULL DEFAULT false,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "userId" UUID,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
--- AlterTable
-ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'subscriber';
+    CONSTRAINT "OTP_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "Plan" (
@@ -50,7 +80,7 @@ CREATE TABLE "Plan" (
 -- CreateTable
 CREATE TABLE "Feature" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "key" "PlanFeatureKeys" NOT NULL,
+    "key" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
 
@@ -108,7 +138,7 @@ CREATE TABLE "Subscriber" (
     "companyName" TEXT,
     "address" TEXT,
     "phone" TEXT,
-    "ownerId" UUID NOT NULL,
+    "userId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -135,12 +165,14 @@ CREATE TABLE "Payment" (
 CREATE TABLE "Client" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "name" TEXT NOT NULL,
-    "email" TEXT,
+    "company" TEXT,
+    "email" TEXT NOT NULL,
     "phone" TEXT,
     "address" TEXT,
     "subscriberId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Client_pkey" PRIMARY KEY ("id")
 );
@@ -169,6 +201,7 @@ CREATE TABLE "Employee" (
     "subscriberId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Employee_pkey" PRIMARY KEY ("id")
 );
@@ -211,6 +244,12 @@ CREATE TABLE "InspectionReport" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PlanFeature_planId_featureId_key" ON "PlanFeature"("planId", "featureId");
 
 -- CreateIndex
@@ -223,10 +262,13 @@ CREATE UNIQUE INDEX "MembershipFeature_membershipId_featureId_key" ON "Membershi
 CREATE INDEX "MembershipHistory_subscriberId_idx" ON "MembershipHistory"("subscriberId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Subscriber_ownerId_key" ON "Subscriber"("ownerId");
+CREATE UNIQUE INDEX "Subscriber_userId_key" ON "Subscriber"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "InspectionAssignment_inspectionId_employeeId_key" ON "InspectionAssignment"("inspectionId", "employeeId");
+
+-- AddForeignKey
+ALTER TABLE "OTP" ADD CONSTRAINT "OTP_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PlanFeature" ADD CONSTRAINT "PlanFeature_planId_fkey" FOREIGN KEY ("planId") REFERENCES "Plan"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -253,7 +295,7 @@ ALTER TABLE "MembershipHistory" ADD CONSTRAINT "MembershipHistory_subscriberId_f
 ALTER TABLE "MembershipHistory" ADD CONSTRAINT "MembershipHistory_planId_fkey" FOREIGN KEY ("planId") REFERENCES "Plan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Subscriber" ADD CONSTRAINT "Subscriber_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Subscriber" ADD CONSTRAINT "Subscriber_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_subscriberId_fkey" FOREIGN KEY ("subscriberId") REFERENCES "Subscriber"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
