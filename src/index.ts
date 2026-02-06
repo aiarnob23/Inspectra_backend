@@ -9,6 +9,7 @@ import { EmployeeModule } from './modules/Employee/EmployeeModule';
 import { InspectionModule } from './modules/Inspection/InspectionModule';
 import { FeatureModule } from './modules/Membership-Plan/Feature/featureModule';
 import { PlanModule } from './modules/Membership-Plan/Plan/PlanModule';
+import { ReminderModule } from './modules/Reminder/ReminderModule';
 
 // Main application bootstrap function
 async function bootstrap() {
@@ -27,6 +28,7 @@ async function bootstrap() {
         app.registerModule(new EmployeeModule());
         app.registerModule(new AssetModule());
         app.registerModule(new InspectionModule());
+        app.registerModule(new ReminderModule());
 
         // Register application modules
         AppLogger.info('✅ All modules registered successfully');
