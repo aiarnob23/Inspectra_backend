@@ -37,8 +37,8 @@ export abstract class BaseController {
      */
     protected sendCreatedResponse<T>(
         res: Response,
-        data: T,
-        message: string = "Resource created successfully"
+        message: string = "Resource created successfully",
+        data: T
     ): Response<ApiResponse<T>> {
         return this.sendResponse(res, message, HTTPStatusCode.CREATED, data);
     }

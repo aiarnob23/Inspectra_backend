@@ -21,6 +21,9 @@ export class ClientModule extends BaseModule {
         AppLogger.info('ClientService initialized successfully');
     }
 
+    /**
+     * Setup module routes
+     */
     protected async setupRoutes(): Promise<void> {
         this.clientController = new ClientController(this.clientService);
         AppLogger.info('ClientController initialized successfully');

@@ -5,58 +5,67 @@ import { HTTPStatusCode } from "@/types/HTTPStatusCode";
 
 
 export class ClientController extends BaseController {
-    constructor(private clientService: ClientService) {
-        super()
-    }
+  constructor(private clientService: ClientService) {
+    super()
+  }
 
-    /**
-   * Create a new client (SINGLE) - Logic remains the same
-   * POST /api/clients
+  /**
+ * Create a new client (SINGLE) - Logic remains the same
+ * POST /api/clients
+ */
+  public createClient = async (req: Request, res: Response) => {
+    const rawBody = req.validatedBody || req.body;
+    const userId = req.userId;
+    const client = { ...rawBody, subscriberId: userId }
+    this.logAction('create', req, client)
+    const result = await this.clientService.createClient(client);
+    return this.sendCreatedResponse(
+      res,
+      'Client created succeddfully',
+      result,
+    );
+  }
+
+  /**
+   * Create multiple clients (BATCH) (NEW METHOD)
+   * POST /api/clients/batch
    */
-    public createClient = async (req: Request, res: Response) => {
-        const rawBody = req.validatedBody || req.body;
-        const userId = req.userId;
-        const client = { ...rawBody, subscriberId: userId }
-        this.logAction('create', req, client)
-        const result = await this.clientService.createClient(client);
-        return this.sendCreatedResponse(res, result, 'Client created succeddfully');
-    }
+  public createMultipleClients = async (req: Request, res: Response) => {
+    const rawBody = req.validatedBody || req.body;
+    const userId = req.userId;
+    const clientsData = rawBody.map((client: any) => ({ ...client, subscriberId: userId }))
+    this.logAction('create', req, { count: clientsData.length })
+    const result = await this.clientService.createMultipleClients(clientsData);
+    return this.sendCreatedResponse(
+      res,
+      'Clients created succeddfully',
+      result,
 
-    /**
-     * Create multiple clients (BATCH) (NEW METHOD)
-     * POST /api/clients/batch
-     */
-    public createMultipleClients = async (req: Request, res: Response) => {
-        const rawBody = req.validatedBody || req.body;
-        const userId = req.userId;
-        const clientsData = rawBody.map((client: any) => ({ ...client, subscriberId: userId }))
-        this.logAction('create', req, { count: clientsData.length })
-        const result = await this.clientService.createMultipleClients(clientsData);
-        return this.sendCreatedResponse(res, result, 'Clients created succeddfully');
-    }
+    );
+  }
 
-    /**
-   * Get all clients with filtering, sorting, and pagination
-   * GET /api/clients
-   */
-  public getAllClients  = async (req: Request, res: Response) => {
+  /**
+ * Get all clients with filtering, sorting, and pagination
+ * GET /api/clients
+ */
+  public getAllClients = async (req: Request, res: Response) => {
     const query = req.validatedQuery || req.query;
     const result = await this.clientService.getClients(query);
 
     this.logAction("getAllClients", req, { count: result.data.length });
 
     return this.sendPaginatedResponse(
-        res,
-        {
-            page:result.page,
-            limit: result.limit,
-            total: result.total,
-            totalPages: result.totalPages,
-            hasNext: result.hasNext,
-            hasPrevious: result.hasPrevious,
-        },
-        "clients retrieved successfully",
-        result.data
+      res,
+      {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+        hasNext: result.hasNext,
+        hasPrevious: result.hasPrevious,
+      },
+      "clients retrieved successfully",
+      result.data
     );
   };
 
@@ -79,10 +88,10 @@ export class ClientController extends BaseController {
     );
   };
 
-   /**
-   * Update a client by ID
-   * PATCH /api/clients/:id
-   */
+  /**
+  * Update a client by ID
+  * PATCH /api/clients/:id
+  */
 
   public updateClient = async (req: Request, res: Response) => {
     const params = req.validatedParams || req.params;
@@ -101,25 +110,25 @@ export class ClientController extends BaseController {
   };
 
 
-    /**
-   * Delete a client by ID
-   * DELETE /api/clients/:id
-   */
-    public deleteClient = async (req: Request, res: Response) => {
-        const params = req.validatedParams || req.params;
-        const { id } = params;
+  /**
+ * Delete a client by ID
+ * DELETE /api/clients/:id
+ */
+  public deleteClient = async (req: Request, res: Response) => {
+    const params = req.validatedParams || req.params;
+    const { id } = params;
 
-        const result = await this.clientService.deleteClient(id);
+    const result = await this.clientService.deleteClient(id);
 
-        this.logAction("deleteClient", req, { clientId: id });
-        
-        return this.sendResponse(
-            res,
-            "Client deleted successfully",
-            HTTPStatusCode.OK,
-            result
-        );
-    }
+    this.logAction("deleteClient", req, { clientId: id });
+
+    return this.sendResponse(
+      res,
+      "Client deleted successfully",
+      HTTPStatusCode.OK,
+      result
+    );
+  }
 
 
 }

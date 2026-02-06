@@ -4,11 +4,9 @@ import { asyncHandler } from "@/middleware/asyncHandler";
 import { validateRequest } from "@/middleware/validation";
 import { ClientValidation } from "./client.validation";
 
-
 export class ClientRoutes {
     private router = Router();
     private clientsController: ClientController;
-
 
     constructor(clientsController: ClientController) {
         this.router = Router();
@@ -74,7 +72,6 @@ export class ClientRoutes {
                 this.clientsController.deleteClient(req, res)
             )
         )
-
 
     }
 
