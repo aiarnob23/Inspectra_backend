@@ -49,7 +49,7 @@ export class InspectionService extends BaseService<Inspection> {
                     isSent: false,
                 }))
             })
-            AppLogger.info(`Created new reminders for inspection: ${newInspection.id} `,newReminders)
+            AppLogger.info(`Created new reminders for inspection: ${newInspection.id} `, newReminders)
             //create employee assignments 
             const newEmployeeAssignments = await tx.inspectionAssignment.createMany({
                 data: employeeIds.map(e => ({
@@ -57,7 +57,7 @@ export class InspectionService extends BaseService<Inspection> {
                     inspectionId: newInspection.id
                 }))
             })
-            AppLogger.info(`Created new employee assignments for inspection: ${newInspection.id} `,newEmployeeAssignments)
+            AppLogger.info(`Created new employee assignments for inspection: ${newInspection.id} `, newEmployeeAssignments)
             return newInspection;
         })
         return result;
@@ -107,11 +107,24 @@ export class InspectionService extends BaseService<Inspection> {
      * Update inspection status or schedule
      */
     async updateInspection(id: string, subscriberId: string, data: UpdateInspectionInput): Promise<Inspection> {
-        const exists = await this.findOne({ id, subscriberId, deletedAt: null });
-        if (!exists) throw new NotFoundError("Inspection not found");
+        const exists = await this.exists({ id, subscriberId });
+        if (!exists) throw new NotFoundError("Inspection");
 
         AppLogger.info(`Updating inspection: ${id}`);
         return await this.updateById(id, data);
+    }
+
+    /**
+     * Delete an inspection (Soft Delete)
+     */
+    async deleteInspection(id: string, subscriberId: string): Promise<Inspection> {
+        const exists = await this.exists({ id, subscriberId });
+        if (!exists) throw new NotFoundError("Inspection");
+
+        AppLogger.info(`Deleting inspection: ${id}`);
+        const deletedInspection = await this.deleteById(id);
+        AppLogger.info(`Inspection deleted successfully: ${id}`);
+        return deletedInspection;
     }
 
 }
