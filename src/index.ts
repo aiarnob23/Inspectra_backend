@@ -10,6 +10,7 @@ import { InspectionModule } from './modules/Inspection/InspectionModule';
 import { FeatureModule } from './modules/Membership-Plan/Feature/featureModule';
 import { PlanModule } from './modules/Membership-Plan/Plan/PlanModule';
 import { ReminderModule } from './modules/Reminder/ReminderModule';
+import { startReminderCronJob } from './schedulers/reminder.cron';
 
 // Main application bootstrap function
 async function bootstrap() {
@@ -32,6 +33,10 @@ async function bootstrap() {
 
         // Register application modules
         AppLogger.info('✅ All modules registered successfully');
+
+        //Cron jobs
+        startReminderCronJob();
+        AppLogger.info('✅ All cron jobs registered successfully');
 
         // Start the server
         await app.spark(config.server.port);

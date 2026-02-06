@@ -34,4 +34,12 @@ export class ReminderModule extends BaseModule {
 
         this.router.use("/api/reminders", this.reminderRoutes.getRouter());
     }
+
+    /**
+     * Clean up module resources
+     */
+    // protected cleanup(): Promise<void> {
+    //     AppLogger.info('Cleaning up ReminderModule resources...');
+    //     return Promise.resolve();
+    // }
 }

@@ -27,7 +27,7 @@ export class ReminderService extends BaseService<Reminder> {
         const { inspectionId, method, additionalNotes } = data;
 
         AppLogger.info(`Creating reminder for inspection: ${inspectionId}, method: ${method}`);
-        
+
         const newReminder = await this.prisma.reminder.create({
             data: {
                 inspectionId,
@@ -43,10 +43,10 @@ export class ReminderService extends BaseService<Reminder> {
     }
 
     /**
-     * Get reminders with filtering and pagination (For Worker or Admin)
+     * Get reminders with filtering and pagination 
      */
     async getReminders(query: ReminderListQuery) {
-        const { page = 1, limit = 10, sortBy, sortOrder, ...rest } = query;
+        const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc", ...rest } = query;
         const filters: any = { ...rest };
 
         const offset = (page - 1) * limit;
@@ -65,6 +65,17 @@ export class ReminderService extends BaseService<Reminder> {
         );
 
         AppLogger.info(`Reminders found: ${result.data.length}`);
+        return result;
+    }
+
+    /**
+     * Get pending reminders (for cron / worker)
+     */
+    async getPendingReminders() {
+        const result = await this.findMany({
+            isSent: false,
+        })
+        AppLogger.info(`Pending reminders found: ${result.data.length}`);
         return result;
     }
 
