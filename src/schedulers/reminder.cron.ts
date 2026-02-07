@@ -6,7 +6,7 @@ import cron from 'node-cron';
 const reminderWorker = new ReminderWorker(prisma);
 
 export function startReminderCronJob(){
-    cron.schedule("0 */5 * * *", async()=>{
+    cron.schedule("0 * * * *", async()=>{
         AppLogger.info("⏰ Reminder cron triggered");
         AppLogger.info("Running scheduled reminder job...");
         await reminderWorker.run();

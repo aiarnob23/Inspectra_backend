@@ -71,9 +71,16 @@ export class ReminderService extends BaseService<Reminder> {
     /**
      * Get pending reminders (for cron / worker)
      */
-    async getPendingReminders() {
+    async getPendingReminders(now = new Date()) {
         const result = await this.findMany({
-            isSent: false,
+            where : {
+                isSent:false,
+                status:'pending',
+                scheduledAt:{
+                    lte:now
+                }
+            },
+            take:50
         })
         AppLogger.info(`Pending reminders found: ${result.data.length}`);
         return result;
