@@ -86,6 +86,13 @@ enum ReminderMethod {
   both
 }
 
+enum ReminderStatus {
+  pending
+  processing
+  failed
+  success
+}
+
 //
 // --------------------------------------
 // AUTH MODELS
@@ -360,6 +367,7 @@ model Reminder {
 
   method   ReminderMethod
   additionalNotes String?
+  status ReminderStatus? @default(pending)
   isSent Boolean      @default(false)
   sentAt DateTime?
 

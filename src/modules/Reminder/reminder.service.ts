@@ -28,7 +28,7 @@ export class ReminderService extends BaseService<Reminder> {
 
         AppLogger.info(`Creating reminder for inspection: ${inspectionId}, method: ${method}`);
 
-        const newReminder = await this.prisma.reminder.create({
+        const newReminder = await this.create({
             data: {
                 inspectionId,
                 method,

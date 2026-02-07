@@ -34,7 +34,34 @@ export class ReminderWorker {
     }
 
     private async processReminder(reminder: any): Promise<void> {
-        
+        try{
+            //lock reminder
+            await this.prisma.reminder.update({
+                where:{id:reminder.id},
+                data:{
+                    status:"processing",
+                    attempts:{increment:1},
+                }
+            });
+            //email -> employee
+            if(reminder.inspection?.employee?.email){
+                await this.emailService.sendTemplatedEmail(
+                    "reminders/employee-inspection-reminder",{
+                        to:reminder.inspection.employee.email,
+                        subject:"Upcoming Inspeciton Reminder",
+                        templateData:{
+                            employeeName:reminder.inspection.employee.name,
+                            inspectoinDate : reminder.inspection.scheduledAt,
+                            assetName:reminder.inspection.asset.name,
+                        },
+                    }
+                );
+            }
+            //email -> client
+            
+        }catch(eror){
+
+        }
     }
 
 }
