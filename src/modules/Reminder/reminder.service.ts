@@ -7,7 +7,7 @@ import { AppLogger } from "@/core/ logging/logger";
 import { NotFoundError } from "@/core/errors/AppError";
 
 export class ReminderService extends BaseService<Reminder> {
-    private readonly MAX_ATTEMPTS = 2;     
+    private readonly MAX_ATTEMPTS = 2;
     constructor(prisma: PrismaClient) {
         super(
             prisma, "Reminder", {
@@ -16,7 +16,6 @@ export class ReminderService extends BaseService<Reminder> {
         }
         )
     }
-
     protected getModel() {
         return this.prisma.reminder;
     }
@@ -73,17 +72,27 @@ export class ReminderService extends BaseService<Reminder> {
      * Get pending reminders (for cron / worker)
      */
     async getPendingReminders(now = new Date()) {
-        const result = await this.findMany({
-            where : {
-                isSent:false,
-                status:{in:[ReminderStatus.pending, ReminderStatus.failed]},
-                attempts:{lte:this.MAX_ATTEMPTS},
-                scheduledAt:{
-                    lte:now
-                },
+        let filters = {
+            isSent: false,
+            status: { in: [ReminderStatus.pending, ReminderStatus.failed] },
+            attempts: { lte: this.MAX_ATTEMPTS },
+            scheduledAt: {
+                lte: now
             },
-            take:50
-        })
+        }
+        const result = await this.findMany(
+            filters,
+            {page:1, limit:50, offset:0},
+            { createdAt: "asc" },
+            {
+                inspection: {
+                    include: {
+                        asset: true,
+                        client: true
+                    }
+                }
+            }
+        )
         AppLogger.info(`Pending reminders found: ${result.data.length}`);
         return result;
     }
