@@ -368,6 +368,7 @@ model Reminder {
   method   ReminderMethod
   additionalNotes String?
   status ReminderStatus? @default(pending)
+  scheduledAt DateTime
   isSent Boolean      @default(false)
   sentAt DateTime?
 
@@ -378,7 +379,7 @@ model Reminder {
   inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
   createdAt  DateTime   @default(now())
 
-  @@index([isSent])
+  @@index([isSent , status])
 }
 
 model InspectionAssignment {
