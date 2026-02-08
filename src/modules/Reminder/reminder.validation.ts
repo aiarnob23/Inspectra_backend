@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { stringToNumber } from "@/utils/stringToNumber";
-import { ReminderMethod } from "@/generated/prisma";
+import { ReminderMethod, ReminderStatus } from "@/generated/prisma";
+
 
 // ---------------------------------------------
 // ✅ Reminder Validation Schema
@@ -43,6 +44,10 @@ export const ReminderValidation = {
       additionalNotes: z.string().max(500).optional(),
       isSent: z.boolean().optional(),
       attempts: z.number().int().min(0).optional(),
+      sentAt: z.date().optional(),
+      status: z.nativeEnum(ReminderStatus).optional(),
+      failedAt: z.date().optional(),
+      failedReason: z.string().max(500).optional(),
     }).strict().refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided for update",
     }),
