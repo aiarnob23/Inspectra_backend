@@ -1,16 +1,17 @@
 // fileName: reminder.service.ts
 
 import { BaseService } from "@/core/BaseService";
-import { Reminder, PrismaClient } from "@/generated/prisma";
+import { Reminder, PrismaClient, ReminderStatus } from "@/generated/prisma";
 import { CreateReminderInput, ReminderListQuery, UpdateReminderInput } from "./reminder.validation";
 import { AppLogger } from "@/core/ logging/logger";
 import { NotFoundError } from "@/core/errors/AppError";
 
 export class ReminderService extends BaseService<Reminder> {
+    private readonly MAX_ATTEMPTS = 2;     
     constructor(prisma: PrismaClient) {
         super(
             prisma, "Reminder", {
-            enableAuditFields: false, // Reminder schema doesn't have standard audit fields
+            enableAuditFields: false,
             enableSoftDelete: false
         }
         )
@@ -75,10 +76,11 @@ export class ReminderService extends BaseService<Reminder> {
         const result = await this.findMany({
             where : {
                 isSent:false,
-                status:'pending',
+                status:{in:[ReminderStatus.pending, ReminderStatus.failed]},
+                attempts:{lte:this.MAX_ATTEMPTS},
                 scheduledAt:{
                     lte:now
-                }
+                },
             },
             take:50
         })
