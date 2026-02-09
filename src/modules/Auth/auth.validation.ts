@@ -81,6 +81,10 @@ export const AuthValidation = {
                 .max(100, 'Last name must not exceed 100 characters')
                 .trim()
                 .optional(),
+            phoneNumber: z
+                .string()
+                .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number")
+                .optional(),
             role: roleSchema.optional(),
         })
         .strict()
@@ -159,17 +163,17 @@ export const AuthValidation = {
             // Remove confirmNewPassword from the final object
             const { confirmNewPassword, ...rest } = data;
             return rest;
-        }),  
+        }),
     // Update role validation (admin only)
     updateRole: z
         .object({
             role: roleSchema,
         })
         .strict(),
-        // Refresh token validation
+    // Refresh token validation
     refreshToken: z
         .object({
-            token: z.string().min(1, 'Token is required').optional(), 
+            token: z.string().min(1, 'Token is required').optional(),
         })
         .strict(),
     // Parameter validation
