@@ -18,7 +18,11 @@ export class AuthController extends BaseController {
 
         const result = await this.authService.register(body);
 
-        return this.sendCreatedResponse(res, result, 'User registered successfully');
+        return this.sendCreatedResponse(
+            res,
+            'User registered successfully',
+            result,
+        );
     }
 
     /**
