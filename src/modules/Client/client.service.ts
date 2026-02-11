@@ -21,8 +21,16 @@ export class ClientService extends BaseService<Client> {
     /**
      * Create a new client (SINGLE)
      */
-    async createClient(data: AddClientInput): Promise<Client> {
-        const { name, company, email, phone, address, subscriberId } = data;
+    async createClient(data: AddClientInput, userId: string): Promise<Client> {
+        const { name, company, email, phone, address } = data;
+        const subscriber = await this.prisma.subscriber.findUnique({
+            where: { userId: userId },
+        })
+
+        if (!subscriber) {
+            throw new NotFoundError("Subscriber not found")
+        }
+
         const normalizedEmail = email?.toLowerCase().trim();
         const exists = await this.findOne({ email: normalizedEmail });
         if (exists) {
@@ -37,7 +45,8 @@ export class ClientService extends BaseService<Client> {
             email: normalizedEmail,
             phone,
             address,
-            subscriberId
+            subscriberId: subscriber.id,
+
         });
 
         AppLogger.info(`Created new client: ${newClient.email} (ID: ${newClient.id})`);

@@ -3,6 +3,7 @@ import { ClientController } from "./client.controller";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { validateRequest } from "@/middleware/validation";
 import { ClientValidation } from "./client.validation";
+import { authenticate } from "@/middleware/auth";
 
 export class ClientRoutes {
     private router = Router();
@@ -18,6 +19,7 @@ export class ClientRoutes {
         //  Create a single new client
         this.router.post(
             '/',
+            authenticate,
             validateRequest({
                 body: ClientValidation.body.addClient,
             }),

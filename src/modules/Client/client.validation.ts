@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { stringToNumber } from "@/utils/stringToNumber";
+import { clientStatus } from "@/generated/prisma";
 
 const BaseAddClientSchema = z
   .object({
@@ -25,6 +26,7 @@ const BaseAddClientSchema = z
       .max(20)
       .optional(),
     address: z.string().max(255).optional(), 
+    status: z.enum(clientStatus).optional(),
     subscriberId: z.string().uuid("Invalid subscriber ID").optional(), 
   })
   .strict();
@@ -56,6 +58,7 @@ export const ClientValidation = {
             "id",
             "company",
             "name",
+            "status",
             "email",
             "phone",
             "createdAt",
