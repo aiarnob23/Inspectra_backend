@@ -65,6 +65,11 @@ enum PaymentStatus {
   refunded
 }
 
+enum clientStatus{
+  active
+  inactive
+}
+
 enum InspectionFrequency {
   one_time
   weekly
@@ -280,6 +285,7 @@ model Client {
   email   String
   phone   String?
   address String?
+  status  clientStatus @default(active)
 
   subscriberId String     @db.Uuid
   subscriber   Subscriber @relation(fields: [subscriberId], references: [id])
