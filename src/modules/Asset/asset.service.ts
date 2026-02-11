@@ -19,8 +19,10 @@ export class AssetService extends BaseService<Asset> {
     /**
      * Create a new asset (SINGLE)
      */
-    async createAsset(data: AddAssetInput): Promise<Asset> {
-        const { name, type, model, serialNumber, description, location, clientId, subscriberId } = data;
+    async createAsset(data: AddAssetInput , userId:string): Promise<Asset> {
+        const { name, type, model, serialNumber, description, location, clientId } = data;
+        const subscriber = await this.getSubscriberOrThrow(userId);
+        const subscriberId = subscriber.id
 
         // Check if an asset with the same serial number already exists for this client
         if (serialNumber) {

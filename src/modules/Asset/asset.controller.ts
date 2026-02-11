@@ -14,17 +14,17 @@ export class AssetController extends BaseController {
      */
     public createAsset = async (req: Request, res: Response) => {
         const body = req.validatedBody || req.body;
-        body.subscriberId = req.userId;
+        const userId = req.userId as string;
         this.logAction(
             "createAsset",
             req,
             { body }
         );
-        const result = await this.assetService.createAsset(body);
+        const result = await this.assetService.createAsset(body, userId);
         return this.sendCreatedResponse(
             res,
+            "Asset created successfully",
             result,
-            "Asset created successfully"
         );
     };
 

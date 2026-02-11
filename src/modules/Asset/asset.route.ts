@@ -3,6 +3,7 @@ import { AssetController } from "./asset.controller";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { validateRequest } from "@/middleware/validation";
 import { AssetValidation } from "./asset.validation";
+import { authenticate } from "@/middleware/auth";
 
 export class AssetRoutes {
     private router: Router;
@@ -18,6 +19,7 @@ export class AssetRoutes {
         // create new asset
         this.router.post(
             '/',
+            authenticate,
             validateRequest({
                 body: AssetValidation.body.addAsset
             }),
