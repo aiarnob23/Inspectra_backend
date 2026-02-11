@@ -2,6 +2,7 @@ import { BaseController } from "@/core/BaseController";
 import { ClientService } from "./client.service";
 import { Request, Response } from "express";
 import { HTTPStatusCode } from "@/types/HTTPStatusCode";
+import { Parser } from "json2csv";
 
 
 export class ClientController extends BaseController {
@@ -16,7 +17,7 @@ export class ClientController extends BaseController {
   public createClient = async (req: Request, res: Response) => {
     const rawBody = req.validatedBody || req.body;
     const userId = req.userId as string;
-    this.logAction('create', req, rawBody )
+    this.logAction('create', req, rawBody)
     const result = await this.clientService.createClient(rawBody, userId);
     return this.sendCreatedResponse(
       res,
@@ -26,15 +27,14 @@ export class ClientController extends BaseController {
   }
 
   /**
-   * Create multiple clients (BATCH) (NEW METHOD)
+   * Create multiple clients (BATCH) 
    * POST /api/clients/batch
    */
   public createMultipleClients = async (req: Request, res: Response) => {
     const rawBody = req.validatedBody || req.body;
-    const userId = req.userId;
-    const clientsData = rawBody.map((client: any) => ({ ...client, subscriberId: userId }))
-    this.logAction('create', req, { count: clientsData.length })
-    const result = await this.clientService.createMultipleClients(clientsData);
+    const userId = req.userId as string;
+    this.logAction('create', req, { count: rawBody.length })
+    const result = await this.clientService.createMultipleClients(rawBody, userId);
     return this.sendCreatedResponse(
       res,
       'Clients created succeddfully',
@@ -67,6 +67,44 @@ export class ClientController extends BaseController {
       result.data
     );
   };
+  /**
+   * Get all clients : CSV export
+   * GET /api/clients/export
+   */
+  public getExportCLients = async (req: Request, res: Response) => {
+    const userId = req.userId as string;
+    const clients = await this.clientService.getClientsForExport(userId);
+
+    if (!clients.length) {
+      return res.status(200).send("No clients found");
+    }
+
+    const fields = [
+      { label: "Name", value: "name" },
+      { label: "Company", value: "company" },
+      { label: "Email", value: "email" },
+      { label: "Phone", value: "phone" },
+      { label: "Address", value: "address" },
+      { label: "Status", value: "status" },
+      {
+        label: "Created At",
+        value: (row: any) =>
+          row.createdAt ? new Date(row.createdAt).toISOString() : "",
+      },
+    ];
+
+    const parser = new Parser({ fields });
+    const csv = parser.parse(clients); 
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=clients.csv"
+    );
+
+    return res.status(200).send(csv);
+  };
+
 
   /**
    * Get a client by ID

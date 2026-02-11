@@ -3,6 +3,7 @@ import { AppLogger } from "./ logging/logger";
 import { DatabaseError, NotFoundError } from "./errors/AppError";
 import { PaginationOptions, PaginationResult } from "@/types/types";
 
+
 export interface BaseServiceOptions {
     enableSoftDelete?: boolean;
     enableAuditFields?: boolean;
@@ -104,6 +105,19 @@ export abstract class BaseService<TModel = any, TCreateInput = any, TUpdateInput
         } catch (error) {
             return this.handleDatabaseError(error, 'exists');
         }
+    }
+
+    /**
+     * check if subscriber exists
+     */
+    protected async getSubscriberOrThrow (userId:string){
+        const subscriber = await this.prisma.subscriber.findUnique({
+            where:{userId}
+        })
+        if(!subscriber){
+            throw new NotFoundError("Subscriber not found");
+        }
+        return subscriber;
     }
 
     //update by id

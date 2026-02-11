@@ -56,12 +56,19 @@ export class ClientService extends BaseService<Client> {
     /**
    * Create multiple clients (BATCH/CSV)
    */
-    async createMultipleClients(data: AddMultipleClientsInput): Promise<Client[]> {
+    async createMultipleClients(data: AddMultipleClientsInput, userId: string): Promise<Client[]> {
+        const subscriber = await this.prisma.subscriber.findUnique({
+            where: { userId: userId },
+        })
+
+        if (!subscriber) {
+            throw new NotFoundError("Subscriber not found")
+        }
         //lowecase email and remove whitespace
         const normalizedData = data.map((client) => ({
             ...client,
             email: client.email?.toLowerCase().trim(),
-            subscriberId: client.subscriberId as string
+            subscriberId: subscriber.id,
         }))
         const emails = normalizedData.map(c => c.email);
 
@@ -126,6 +133,20 @@ export class ClientService extends BaseService<Client> {
         );
         AppLogger.info(`Clients found : ${result.data.length}`);
         return result;
+    }
+
+    /**
+     * Get clients : CSV export
+     */
+    async getClientsForExport(userId: string) {
+        const subscriber = await this.getSubscriberOrThrow(userId);
+        const clients = await this.prisma.client.findMany({
+            where: { subscriberId: subscriber.id },
+            orderBy: { createdAt: "desc" },
+        });
+
+        AppLogger.info(`Clients found : ${clients.length}`);
+        return clients;
     }
 
     /**

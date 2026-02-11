@@ -43,6 +43,13 @@ export class ClientRoutes {
                 this.clientsController.getAllClients(req, res)
             )
         )
+        //Get all clietns : Export to CSV
+        this.router.get(
+            '/export-csv',
+            authenticate,
+            asyncHandler((req:Request, res:Response)=>
+            this.clientsController.getExportCLients(req,res))
+        )
         // Get client by ID
         this.router.get(
             "/:id",
