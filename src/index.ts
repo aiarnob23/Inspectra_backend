@@ -9,6 +9,7 @@ import { EmployeeModule } from './modules/Employee/EmployeeModule';
 import { InspectionModule } from './modules/Inspection/InspectionModule';
 import { FeatureModule } from './modules/Membership-Plan/Feature/featureModule';
 import { PlanModule } from './modules/Membership-Plan/Plan/PlanModule';
+import { PaymentModule } from './modules/Payment/PaymentModule';
 import { ReminderModule } from './modules/Reminder/ReminderModule';
 import { startReminderCronJob } from './schedulers/reminder.cron';
 
@@ -30,6 +31,7 @@ async function bootstrap() {
         app.registerModule(new AssetModule());
         app.registerModule(new InspectionModule());
         app.registerModule(new ReminderModule());
+        app.registerModule(new PaymentModule());
 
         // Register application modules
         AppLogger.info('✅ All modules registered successfully');

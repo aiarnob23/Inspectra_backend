@@ -166,7 +166,7 @@ export class PaymentService {
         if (!plan) {
             throw new NotFoundError("Plan");
         }
-        const subscriber = await this.prisma.user.findUnique({
+        const subscriber = await this.prisma.subscriber.findUnique({
             where: { id: subscriberId },
         })
         if (!subscriber) {

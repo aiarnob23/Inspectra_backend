@@ -3,7 +3,6 @@ import { Inspection, InspectionStatus, PrismaClient, ReminderMethod } from "@/ge
 import { CreateInspectionInput, InspectionListQuery, UpdateInspectionInput } from "./inspection.validation";
 import { AppLogger } from "@/core/ logging/logger";
 import { NotFoundError } from "@/core/errors/AppError";
-import { inspect } from "node:util";
 
 
 export class InspectionService extends BaseService<Inspection> {
@@ -55,12 +54,14 @@ export class InspectionService extends BaseService<Inspection> {
                     {
                         inspectionId: newInspection.id,
                         method: ReminderMethod.email,
+                        subscriberId: subscriberId,
                         scheduledAt: fiveDasysBefore,
                         isSent: false,
                     },
                     {
                         inspectionId: newInspection.id,
                         method: ReminderMethod.email,
+                        subscriberId: subscriberId,
                         scheduledAt: oneDayBefore,
                         isSent: false
                     }

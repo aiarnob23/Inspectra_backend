@@ -1,4 +1,4 @@
-// fileName: reminder.service.ts
+
 
 import { BaseService } from "@/core/BaseService";
 import { Reminder, PrismaClient, ReminderStatus } from "@/generated/prisma";
@@ -51,11 +51,8 @@ export class ReminderService extends BaseService<Reminder> {
         const subscriberId = subscriber.id;
         const filters: any = { 
             ...rest ,
-            inspection:{
-                subscriberId : subscriberId
-            }
-
-        };
+            subscriberId,
+        }
 
         const offset = (page - 1) * limit;
         const result = await this.findMany(
