@@ -30,7 +30,8 @@ export class ReminderController extends BaseController {
      */
     public getAllReminders = async (req: Request, res: Response) => {
         const query = req.validatedQuery || req.query;
-        const result = await this.reminderService.getReminders(query);
+        const userId = req.userId as string;
+        const result = await this.reminderService.getReminders(userId, query);
 
         this.logAction("getAllReminders", req, { count: result.data.length });
         return this.sendPaginatedResponse(

@@ -245,6 +245,7 @@ model Subscriber {
   employees   Employee[]
   assets      Asset[]
   inspections Inspection[]
+  reminders   Reminder[]
   payments    Payment[]
 
   createdAt           DateTime            @default(now())
@@ -370,6 +371,7 @@ model Inspection {
 model Reminder {
   id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   inspectionId String @db.Uuid
+  subscriberId String @db.Uuid
 
   method   ReminderMethod
   additionalNotes String?
@@ -382,6 +384,7 @@ model Reminder {
   failedAt   DateTime?
   failReason String?
 
+  subscriber Subscriber @relation(fields:[subscriberId], references:[id], onDelete:Cascade)
   inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
   createdAt  DateTime   @default(now())
 

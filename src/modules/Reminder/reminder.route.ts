@@ -5,6 +5,7 @@ import { ReminderController } from "./reminder.controller";
 import { validateRequest } from "@/middleware/validation";
 import { ReminderValidation } from "./reminder.validation";
 import { asyncHandler } from "@/middleware/asyncHandler";
+import { authenticate } from "@/middleware/auth";
 
 export class ReminderRoutes {
     private router = Router();
@@ -26,6 +27,7 @@ export class ReminderRoutes {
         // List reminders
         this.router.get(
             '/',
+            authenticate,
             validateRequest({ query: ReminderValidation.query.list }),
             asyncHandler((req: Request, res: Response) => this.reminderController.getAllReminders(req, res))
         );

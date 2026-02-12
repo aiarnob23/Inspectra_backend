@@ -45,9 +45,17 @@ export class ReminderService extends BaseService<Reminder> {
     /**
      * Get reminders with filtering and pagination 
      */
-    async getReminders(query: ReminderListQuery) {
+    async getReminders(userId:string, query: ReminderListQuery) {
         const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc", ...rest } = query;
-        const filters: any = { ...rest };
+        const subscriber = await this.getSubscriberOrThrow(userId);
+        const subscriberId = subscriber.id;
+        const filters: any = { 
+            ...rest ,
+            inspection:{
+                subscriberId : subscriberId
+            }
+
+        };
 
         const offset = (page - 1) * limit;
         const result = await this.findMany(
