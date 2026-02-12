@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authenticate } from "@/middleware/auth";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { PaymentController } from "./payment.controller";
+import express from "express";
 
 export class PaymentRoutes {
   private router = Router();

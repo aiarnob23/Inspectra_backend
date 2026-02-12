@@ -262,7 +262,7 @@ model Payment {
   planId       String @db.Uuid
 
   amount   Float
-  currency String        @default("BDT")
+  currency String        @default("USD")
   provider String //stripe | sslcommerz
   status   PaymentStatus @default(pending)
 

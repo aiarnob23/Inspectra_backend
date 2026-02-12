@@ -5,6 +5,8 @@ import { SubscriptionService } from "../Subscription/subscription.service";
 import { PaymentRoutes } from "./payment.route";
 import { BaseModule } from "@/core/BaseModule";
 import { AppLogger } from "@/core/ logging/logger";
+import Stripe from "stripe";
+import { StripeService } from "./stripe.service";
 
 export class PaymentModule extends BaseModule {
     public readonly name = 'PaymentModule';
@@ -20,7 +22,7 @@ export class PaymentModule extends BaseModule {
      * Setup module services
      */
     protected async setupServices(): Promise<void> {
-        this.paymentService = new PaymentService(this.context.prisma, new SubscriptionService(this.context.prisma));
+        this.paymentService = new PaymentService(this.context.prisma, new SubscriptionService(this.context.prisma), new StripeService());
         AppLogger.info('PaymentService initialized successfully');
     }
 
@@ -29,11 +31,11 @@ export class PaymentModule extends BaseModule {
        */
     protected async setupRoutes(): Promise<void> {
         this.paymentController = new PaymentController(this.paymentService);
-        AppLogger.info('EmployeeController initialized successfully');
+        AppLogger.info('PaymentController initialized successfully');
 
         this.paymentRoutes = new PaymentRoutes(this.paymentController);
-        AppLogger.info('EmployeeRoutes initialized successfully');
+        AppLogger.info('PaymentRoutes initialized successfully');
 
-        this.router.use('/api/employees', this.paymentRoutes.getRouter());
+        this.router.use('/api/payments', this.paymentRoutes.getRouter());
     }
 }

@@ -2,11 +2,13 @@ import { PrismaClient } from "@/generated/prisma";
 import { SubscriptionService } from "../Subscription/subscription.service";
 import { DiscountInput, TaxInput } from "@/types/paymentTypes";
 import { NotFoundError } from "@/core/errors/AppError";
+import { StripeService } from "./stripe.service";
 
 export class PaymentService {
     constructor(
         private readonly prisma: PrismaClient,
-        private readonly subscriptionService: SubscriptionService
+        private readonly subscriptionService: SubscriptionService,
+        private readonly stripeService: StripeService
     ) { }
 
     // ===============================
@@ -150,14 +152,13 @@ export class PaymentService {
     // ===============================
     public async initiatePayment(params: {
         planId: string;
-        subscriberId: string;
-        amountMinor: number;
+        userId: string;
         discount?: DiscountInput;
         tax?: TaxInput;
         currency: string;
         provider: string;
     }): Promise<any> {
-        const { planId, subscriberId, amountMinor, currency, discount, tax, provider } = params;
+        const { planId, userId, currency, discount, tax, provider } = params;
 
         //Fetch plan & subscriber
         const plan = await this.prisma.plan.findUnique({
@@ -167,7 +168,7 @@ export class PaymentService {
             throw new NotFoundError("Plan");
         }
         const subscriber = await this.prisma.subscriber.findUnique({
-            where: { id: subscriberId },
+            where: { userId: userId }
         })
         if (!subscriber) {
             throw new NotFoundError("User (Subscriber)");
@@ -175,7 +176,7 @@ export class PaymentService {
 
         //Account engine 
         const billing = await this.calculateNetPayable({
-            subscriberId,
+            subscriberId: subscriber.id,
             basePriceMinor: plan.price,
             discount: discount,
             tax: tax,
@@ -197,17 +198,59 @@ export class PaymentService {
             }
         })
 
+        //stripe session
+        const stripeSession = await this.stripeService.createCheckoutSession({
+            amountMinor: billing.netPayable,
+            currency: currency,
+            transactionId: idempotencyKey
+        })
+
         // gateway call happens here
         return {
             paymentId: paymentRecord.id,
             transactionId: idempotencyKey,
             billingSummary: billing,
-            checkoutUrl: `https://fake-gateway.com/pay/${idempotencyKey}`
+            checkoutUrl: stripeSession.url,
         };
     }
 
+
     // ===============================
-    // PAYMENT CONFIRM (WEBHOOK)
+    // STRIPE WEBHOOK VERIFY
+    // ===============================
+    public async verifyStripeWebhook(payload: Buffer, signature: string) {
+        const event = await this.stripeService.verifyWebhookSignature(
+            payload,
+            signature
+        );
+
+        console.log("🎯 Stripe event received:", event.type);
+
+        // We only care about checkout success
+        if (event.type === "checkout.session.completed") {
+            const session = event.data.object as any;
+
+            const transactionId = session.metadata?.transactionId;
+
+            if (!transactionId) {
+                console.log("⚠ No transactionId in metadata");
+                return;
+            }
+
+            console.log("✅ Activating payment for:", transactionId);
+
+            await this.confirmPayment({
+                transactionId,
+                success: true,
+            });
+        }
+
+        return event;
+    }
+
+
+    // ===============================
+    // PAYMENT CONFIRM 
     // ===============================
     public async confirmPayment(params: {
         transactionId: string;
@@ -240,11 +283,12 @@ export class PaymentService {
                 await this.subscriptionService.activateMembership(
                     payment.subscriberId,
                     payment.planId,
-                    tx // Pass transaction client to keep it atomic
+                    tx 
                 );
             }
         })
     }
+
 
     // ===============================
     // ROLLBACK / RECOVERY

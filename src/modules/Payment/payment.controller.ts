@@ -17,10 +17,7 @@ export class PaymentController extends BaseController {
 
     const result = await this.paymentService.initiatePayment({
       planId: body.planId,
-      subscriberId: userId,
-      amountMinor: body.amountMinor,
-      discount: body.discount,
-      tax: body.tax,
+      userId: userId,
       currency: body.currency,
       provider: body.provider,
     });
@@ -41,19 +38,14 @@ export class PaymentController extends BaseController {
    * POST /api/payments/webhook
    */
   public confirmPayment = async (req: Request, res: Response) => {
-    const body = req.body;
+    const sig  = req.headers["stripe-signature"] as string;
 
-    await this.paymentService.confirmPayment({
-      transactionId: body.transactionId,
-      success: body.success,
-    });
-
-    return this.sendResponse(
-      res,
-      "Webhook processed",
-      HTTPStatusCode.OK,
-      null
+    const event =await this.paymentService.verifyStripeWebhook(
+      (req as any).rawBody,
+      sig
     );
+
+    return res.status(200).json({received:true});
   };
 
   /**
