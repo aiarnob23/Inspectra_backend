@@ -89,7 +89,15 @@ export class AssetService extends BaseService<Asset> {
             filters,
             { page, limit, offset },
             { [sortBy]: sortOrder },
-            {  } //client:true
+            { 
+                client:{
+                    select:{
+                        id: true,
+                        name: true,
+                        company:true
+                    }
+                }
+             }
         );
 
         AppLogger.info(`Assets found : ${result.data.length}`);

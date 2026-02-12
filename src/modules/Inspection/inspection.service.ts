@@ -1,8 +1,9 @@
 import { BaseService } from "@/core/BaseService";
-import { Inspection, InspectionStatus, PrismaClient } from "@/generated/prisma";
+import { Inspection, InspectionStatus, PrismaClient, ReminderMethod } from "@/generated/prisma";
 import { CreateInspectionInput, InspectionListQuery, UpdateInspectionInput } from "./inspection.validation";
 import { AppLogger } from "@/core/ logging/logger";
 import { NotFoundError } from "@/core/errors/AppError";
+import { inspect } from "node:util";
 
 
 export class InspectionService extends BaseService<Inspection> {
@@ -23,10 +24,18 @@ export class InspectionService extends BaseService<Inspection> {
     /**
      * Create a new inspection with reminders and assignments (Atomic Transaction)
      */
-    async createInspection(subscriberId: string, data: CreateInspectionInput): Promise<Inspection> {
-        const { clientId, assetId, frequency, scheduledAt, reminders, employeeIds } = data;
+    async createInspection(userId: string, data: CreateInspectionInput): Promise<Inspection> {
+        const { clientId, assetId, frequency, scheduledAt, employeeIds } = data;
+        const subscriber = await this.getSubscriberOrThrow(userId);
+        const subscriberId = subscriber.id
 
-        AppLogger.info(`Creating inspection for asset: ${assetId} for client: ${clientId} , frequency: ${frequency}, scheduledAt: ${scheduledAt}, reminders: ${reminders.length}, employees: ${employeeIds.length}`);
+        const scheduledDate = new Date(scheduledAt);
+        const fiveDasysBefore = new Date(scheduledDate);
+        fiveDasysBefore.setDate(fiveDasysBefore.getDate() - 5);
+        const oneDayBefore = new Date(scheduledDate);
+        oneDayBefore.setDate(oneDayBefore.getDate() - 1);
+
+        AppLogger.info(`Creating inspection for asset: ${assetId} for client: ${clientId} , frequency: ${frequency}, scheduledAt: ${scheduledAt}, employees: ${employeeIds.length}`);
         const result = await this.prisma.$transaction(async (tx) => {
             //create new inspection record
             const newInspection = await tx.inspection.create({
@@ -40,17 +49,26 @@ export class InspectionService extends BaseService<Inspection> {
                 }
             })
             AppLogger.info(`Created new inspection `, newInspection)
-            //create reminders (one to many)
+            //create auto reminders(one to many)
             const newReminders = await tx.reminder.createMany({
-                data: reminders.map(r => ({
-                    inspectionId: newInspection.id,
-                    method: r.method,
-                    additionalNotes: r.additionalNotes || "",
-                    isSent: false,
-                }))
+                data: [
+                    {
+                        inspectionId: newInspection.id,
+                        method: ReminderMethod.email,
+                        scheduledAt: fiveDasysBefore,
+                        isSent: false,
+                    },
+                    {
+                        inspectionId: newInspection.id,
+                        method: ReminderMethod.email,
+                        scheduledAt: oneDayBefore,
+                        isSent: false
+                    }
+                ]
             })
+
             AppLogger.info(`Created new reminders for inspection: ${newInspection.id} `, newReminders)
-            //create employee assignments 
+            // create employee assignments 
             const newEmployeeAssignments = await tx.inspectionAssignment.createMany({
                 data: employeeIds.map(e => ({
                     employeeId: e,

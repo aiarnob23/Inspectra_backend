@@ -35,11 +35,6 @@ export const InspectionValidation = {
       assetId: z.string().uuid("Invalid asset ID"),
       frequency: z.nativeEnum(InspectionFrequency),
       scheduledAt: z.string().datetime(),
-      // One-to-Many Reminders
-      reminders: z.array(z.object({
-        method: z.nativeEnum(ReminderMethod),
-        additionalNotes: z.string().max(500).optional(),
-      })).min(1, "At least one reminder is required"),
       // Employee assignments
       employeeIds: z.array(z.string().uuid()).min(1, "At least one employee must be assigned"),
     }).strict(),

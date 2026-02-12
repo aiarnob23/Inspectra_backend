@@ -3,6 +3,7 @@ import { EmployeeController } from "./employee.controller";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { validateRequest } from "@/middleware/validation";
 import { EmployeeValidation } from "./employee.validation";
+import { authenticate } from "@/middleware/auth";
 
 export class EmployeeRoutes {
     private router = Router();
@@ -18,6 +19,7 @@ export class EmployeeRoutes {
         // Create a single new employee
         this.router.post(
             '/',
+            authenticate,
             validateRequest({
                 body: EmployeeValidation.body.addEmployee,
             }),
@@ -36,6 +38,7 @@ export class EmployeeRoutes {
         // Get all employees
         this.router.get(
             "/",
+            authenticate,
             validateRequest({
                 query: EmployeeValidation.query.list,
             }),

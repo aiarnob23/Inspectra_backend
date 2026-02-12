@@ -14,19 +14,17 @@ export class EmployeeController extends BaseController {
      */
     public createEmployee = async (req: Request, res: Response) => {
         const rawBody = req.validatedBody || req.body;
-        const userId = req.userId;
-        const data = { ...rawBody, subscriberId: userId };
-
+        const userId = req.userId as string;
         this.logAction(
             'create',
             req,
-            { email: data.email, name: data.name }
+            { email: rawBody.email, name: rawBody.name }
         );
-        const result = await this.employeeService.createEmployee(data);
+        const result = await this.employeeService.createEmployee(rawBody, userId);
         return this.sendCreatedResponse(
             res,
+            'Employee created successfully',
             result,
-            'Employee created successfully'
         );
     }
 
@@ -46,8 +44,10 @@ export class EmployeeController extends BaseController {
         );
         const result = await this.employeeService.createMultipleEmployees(employeesData);
         return this.sendCreatedResponse(
-            res, result,
-            'Employees created successfully'
+            res,
+            'Employees created successfully',
+            result
+
         );
     }
 
@@ -122,7 +122,7 @@ export class EmployeeController extends BaseController {
         const params = req.validatedParams || req.params;
         const { id } = params;
         this.logAction("deleteEmployee", req, { id });
-        const result = await this.employeeService.deleteEmployee(id, req.userId!); 
+        const result = await this.employeeService.deleteEmployee(id, req.userId!);
         return this.sendResponse(
             res,
             "Employee deleted successfully",

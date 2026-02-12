@@ -20,12 +20,14 @@ export class EmployeeService extends BaseService<Employee> {
     /**
      * Create a new employee (SINGLE)
      */
-    async createEmployee(data: AddEmployeeInput): Promise<Employee> {
+    async createEmployee(data: AddEmployeeInput, userId: string): Promise<Employee> {
+        const subscriber = await this.getSubscriberOrThrow(userId);
         const exists = await this.findOne({ email: data.email })
         if (exists) {
             AppLogger.warn(`Employee with email ${data.email} already exists.`);
             throw new ConflictError("Employee with this email already exists");
         }
+        data.subscriberId = subscriber.id;
         AppLogger.info(`Creating new employee. email:${data.email} name:${data.name}`);
         const newEmployee = await this.create(data);
         AppLogger.info(`Created new employee. email:${newEmployee.email} name:${newEmployee.name}`);
@@ -84,10 +86,12 @@ export class EmployeeService extends BaseService<Employee> {
     /**
      * Get all employees with filtering, search, and pagination
      */
-    async getEmployees(subscriberId: string, query: EmployeeListQuery) {
+    async getEmployees(userId: string, query: EmployeeListQuery) {
+        const subscriber = await this.getSubscriberOrThrow(userId);
+        const subscriberId = subscriber.id
 
         const { page = 1, limit = 10, search, sortBy = 'createdAt', sortOrder = 'desc', ...rest } = query;
-        let filters: any = { ...this.buildWhereClause({ rest }) };
+        let filters: any = { subscriberId }
         if (subscriberId) {
             filters.subscriberId = subscriberId;
         }

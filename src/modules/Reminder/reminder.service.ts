@@ -82,13 +82,18 @@ export class ReminderService extends BaseService<Reminder> {
         }
         const result = await this.findMany(
             filters,
-            {page:1, limit:50, offset:0},
+            { page: 1, limit: 50, offset: 0 },
             { createdAt: "asc" },
             {
                 inspection: {
                     include: {
                         asset: true,
-                        client: true
+                        client: true,
+                        assignments: {
+                            include: {
+                                employee: true,
+                            }
+                        }
                     }
                 }
             }

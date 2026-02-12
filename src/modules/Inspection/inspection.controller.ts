@@ -14,9 +14,9 @@ export class InspectionController extends BaseController {
      */
     public createInspection = async (req: Request, res: Response) => {
         const body = req.validatedBody || req.body;
-        const subscriberId = req.userId as string;
+        const userId = req.userId as string;
         this.logAction('createInspection', req, { type: body.type })
-        const result = await this.inspectionService.createInspection(subscriberId, body);
+        const result = await this.inspectionService.createInspection(userId, body);
         return this.sendCreatedResponse(
             res,
             "Inspection created successfully",

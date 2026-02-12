@@ -3,6 +3,7 @@ import { InspectionController } from "./inspection.controller";
 import { validateRequest } from "@/middleware/validation";
 import { InspectionValidation } from "./inspection.validation";
 import { asyncHandler } from "@/middleware/asyncHandler";
+import { authenticate } from "@/middleware/auth";
 
 
 export class InspectionRoutes {
@@ -16,6 +17,7 @@ export class InspectionRoutes {
         //Schedule new inspection
         this.router.post(
             '/',
+            authenticate,
             validateRequest({
                 body: InspectionValidation.body.create,
             }),
