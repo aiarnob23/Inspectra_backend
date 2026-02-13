@@ -226,7 +226,6 @@ export class PaymentService {
 
         console.log("🎯 Stripe event received:", event.type);
 
-        // We only care about checkout success
         if (event.type === "checkout.session.completed") {
             const session = event.data.object as any;
 

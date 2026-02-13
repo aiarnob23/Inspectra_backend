@@ -14,6 +14,7 @@ export class SubscriptionService {
     // ===============================
     async activateMembership(subscriberId: string, planId: string, tx?: Prisma.TransactionClient) {
         const db = tx || this.prisma;
+        AppLogger.info(`Activating membership for subscriber ${subscriberId} and plan ${planId}`);
 
         //fetch target plan details
         const plan = await db.plan.findUnique({
@@ -44,7 +45,7 @@ export class SubscriptionService {
             return result;
         }
         else {
-            //new plan 
+            //store memberhsip history
             if (currentMembership) {
                 await db.membershipHistory.create({
                     data: {
