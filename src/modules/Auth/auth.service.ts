@@ -224,9 +224,9 @@ export class AuthService extends BaseService<User> {
         return this.generateAuthResponse(user);
     }
 
-    //password reset flow starts//
+
     /**
-     * Forgot Password - send reset code
+     * Forgot Password - send reset code (step 1)
      */
     async forgotPassword(data: ForgotPasswordInput): Promise<{ message: string }> {
         const { email } = data;
@@ -279,7 +279,7 @@ export class AuthService extends BaseService<User> {
     }
 
     /**
-   * Verify reset password OTP
+   * Verify reset password OTP (step 2)
    */
     async verifyResetPasswordOTP(data: VerifyResetPasswordOTPInput): Promise<{ message: string }> {
         const { email, code } = data;
@@ -317,13 +317,12 @@ export class AuthService extends BaseService<User> {
                 error: error instanceof Error ? error.message : error,
             });
 
-            // Rethrow so controller layer (Express, Nest, etc.) can format proper HTTP response
             throw error;
         }
     }
 
     /**
-     * Reset password with OTP
+     * Reset password with OTP (step 3)
      */
     async resetPassword(data: ResetPasswordInput): Promise<{ message: string }> {
         const { email, newPassword } = data;
@@ -441,9 +440,9 @@ export class AuthService extends BaseService<User> {
         };
     }
 
-     /**
-     * Verify JWT token and return user info
-     */
+    /**
+    * Verify JWT token and return user info
+    */
     async verifyToken(token: string): Promise<TokenInfo> {
         try {
             if (!config.security.jwt.secret) {
@@ -478,9 +477,9 @@ export class AuthService extends BaseService<User> {
         }
     }
 
-      /**
-     * Refresh token
-     */
+    /**
+   * Refresh token
+   */
     async refreshToken(currentToken: string): Promise<AuthResponse> {
         try {
             if (!config.security.jwt.secret) {

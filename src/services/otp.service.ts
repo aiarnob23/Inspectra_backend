@@ -312,7 +312,7 @@ export class OTPService {
         const templateMap: Record<OTPType, string> = {
             [OTPType.email_verification]: 'email-verification-otp',
             [OTPType.login_verification]: 'login-verification-otp',
-            [OTPType.password_reset]: 'password-reset-otp',
+            [OTPType.password_reset]: 'email-verification-otp',
             [OTPType.two_factor]: 'two-factor-otp',
         };
 
