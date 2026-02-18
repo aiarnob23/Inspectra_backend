@@ -126,7 +126,7 @@ model User {
 
   otps       OTP[]
   subscriber Subscriber?
-  devices    Devices[]
+  devices    Device[]
 }
 
 model OTP {
@@ -420,7 +420,7 @@ model InspectionReport {
 // =====================================================
 // Device Limit
 // =====================================================
-model Devices {
+model Device {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   deviceId   String
   userAgent  String?
