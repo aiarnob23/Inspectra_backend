@@ -34,7 +34,11 @@ export class StripeService {
             },
             success_url: `${process.env.CLIENT_URL}/payment-success`,
             cancel_url: `${process.env.CLIENT_URL}/payment-failed`,
-        });
+        },
+        {
+            idempotencyKey:params.transactionId 
+        }
+    );
 
         return session;
     }
