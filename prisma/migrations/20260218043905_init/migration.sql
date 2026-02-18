@@ -8,6 +8,9 @@ CREATE TYPE "AccountStatus" AS ENUM ('active', 'inactive', 'suspended', 'pending
 CREATE TYPE "OTPType" AS ENUM ('email_verification', 'login_verification', 'password_reset', 'two_factor');
 
 -- CreateEnum
+CREATE TYPE "BillingInterval" AS ENUM ('monthly', 'yearly', 'lifetime');
+
+-- CreateEnum
 CREATE TYPE "SubscriptionPlanType" AS ENUM ('basic', 'pro', 'enterprise');
 
 -- CreateEnum
@@ -20,10 +23,19 @@ CREATE TYPE "SubscriptionCancelReason" AS ENUM ('upgrade', 'downgrade', 'expired
 CREATE TYPE "PaymentStatus" AS ENUM ('pending', 'success', 'failed', 'refunded');
 
 -- CreateEnum
+CREATE TYPE "clientStatus" AS ENUM ('active', 'inactive');
+
+-- CreateEnum
 CREATE TYPE "InspectionFrequency" AS ENUM ('one_time', 'weekly', 'monthly', 'quarterly', 'yearly');
 
 -- CreateEnum
 CREATE TYPE "InspectionStatus" AS ENUM ('pending', 'completed', 'missed', 'rescheduled');
+
+-- CreateEnum
+CREATE TYPE "ReminderMethod" AS ENUM ('email', 'sms', 'both');
+
+-- CreateEnum
+CREATE TYPE "ReminderStatus" AS ENUM ('pending', 'processing', 'failed', 'success');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -71,6 +83,8 @@ CREATE TABLE "Plan" (
     "maxClients" INTEGER,
     "maxEmployees" INTEGER,
     "maxAssets" INTEGER,
+    "billingInterval" "BillingInterval" NOT NULL,
+    "duration" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -151,7 +165,7 @@ CREATE TABLE "Payment" (
     "subscriberId" UUID NOT NULL,
     "planId" UUID NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
-    "currency" TEXT NOT NULL DEFAULT 'BDT',
+    "currency" TEXT NOT NULL DEFAULT 'USD',
     "provider" TEXT NOT NULL,
     "status" "PaymentStatus" NOT NULL DEFAULT 'pending',
     "transactionId" TEXT,
@@ -169,6 +183,7 @@ CREATE TABLE "Client" (
     "email" TEXT NOT NULL,
     "phone" TEXT,
     "address" TEXT,
+    "status" "clientStatus" NOT NULL DEFAULT 'active',
     "subscriberId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -182,11 +197,15 @@ CREATE TABLE "Asset" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "name" TEXT NOT NULL,
     "type" TEXT NOT NULL,
+    "model" TEXT NOT NULL,
     "serialNumber" TEXT,
+    "description" TEXT,
+    "location" TEXT NOT NULL,
     "clientId" UUID NOT NULL,
     "subscriberId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Asset_pkey" PRIMARY KEY ("id")
 );
@@ -218,8 +237,28 @@ CREATE TABLE "Inspection" (
     "nextDueAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Inspection_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Reminder" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "inspectionId" UUID NOT NULL,
+    "subscriberId" UUID NOT NULL,
+    "method" "ReminderMethod" NOT NULL,
+    "additionalNotes" TEXT,
+    "status" "ReminderStatus" DEFAULT 'pending',
+    "scheduledAt" TIMESTAMP(3) NOT NULL,
+    "isSent" BOOLEAN NOT NULL DEFAULT false,
+    "sentAt" TIMESTAMP(3),
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "failedAt" TIMESTAMP(3),
+    "failReason" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Reminder_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -243,11 +282,27 @@ CREATE TABLE "InspectionReport" (
     CONSTRAINT "InspectionReport_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Devices" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "deviceId" TEXT NOT NULL,
+    "userAgent" TEXT,
+    "ip" TEXT,
+    "lastActive" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userId" UUID NOT NULL,
+
+    CONSTRAINT "Devices_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Feature_key_key" ON "Feature"("key");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PlanFeature_planId_featureId_key" ON "PlanFeature"("planId", "featureId");
@@ -265,7 +320,19 @@ CREATE INDEX "MembershipHistory_subscriberId_idx" ON "MembershipHistory"("subscr
 CREATE UNIQUE INDEX "Subscriber_userId_key" ON "Subscriber"("userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Payment_transactionId_key" ON "Payment"("transactionId");
+
+-- CreateIndex
+CREATE INDEX "Reminder_isSent_status_idx" ON "Reminder"("isSent", "status");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "InspectionAssignment_inspectionId_employeeId_key" ON "InspectionAssignment"("inspectionId", "employeeId");
+
+-- CreateIndex
+CREATE INDEX "Devices_userId_idx" ON "Devices"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Devices_userId_deviceId_key" ON "Devices"("userId", "deviceId");
 
 -- AddForeignKey
 ALTER TABLE "OTP" ADD CONSTRAINT "OTP_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -325,6 +392,12 @@ ALTER TABLE "Inspection" ADD CONSTRAINT "Inspection_clientId_fkey" FOREIGN KEY (
 ALTER TABLE "Inspection" ADD CONSTRAINT "Inspection_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "Asset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Reminder" ADD CONSTRAINT "Reminder_subscriberId_fkey" FOREIGN KEY ("subscriberId") REFERENCES "Subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Reminder" ADD CONSTRAINT "Reminder_inspectionId_fkey" FOREIGN KEY ("inspectionId") REFERENCES "Inspection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "InspectionAssignment" ADD CONSTRAINT "InspectionAssignment_inspectionId_fkey" FOREIGN KEY ("inspectionId") REFERENCES "Inspection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -335,3 +408,6 @@ ALTER TABLE "InspectionReport" ADD CONSTRAINT "InspectionReport_inspectionId_fke
 
 -- AddForeignKey
 ALTER TABLE "InspectionReport" ADD CONSTRAINT "InspectionReport_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "Employee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Devices" ADD CONSTRAINT "Devices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

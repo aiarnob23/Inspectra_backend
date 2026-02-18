@@ -65,7 +65,7 @@ enum PaymentStatus {
   refunded
 }
 
-enum clientStatus{
+enum clientStatus {
   active
   inactive
 }
@@ -126,6 +126,7 @@ model User {
 
   otps       OTP[]
   subscriber Subscriber?
+  devices    Devices[]
 }
 
 model OTP {
@@ -280,7 +281,7 @@ model Payment {
 // =====================================================
 
 model Client {
-  id      String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id      String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name    String
   company String?
   email   String
@@ -361,11 +362,11 @@ model Inspection {
 
   assignments InspectionAssignment[]
   reports     InspectionReport[]
-  reminder Reminder[]
+  reminder    Reminder[]
 
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  deletedAt           DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 model Reminder {
@@ -373,22 +374,22 @@ model Reminder {
   inspectionId String @db.Uuid
   subscriberId String @db.Uuid
 
-  method   ReminderMethod
+  method          ReminderMethod
   additionalNotes String?
-  status ReminderStatus? @default(pending)
-  scheduledAt DateTime
-  isSent Boolean      @default(false)
-  sentAt DateTime?
+  status          ReminderStatus? @default(pending)
+  scheduledAt     DateTime
+  isSent          Boolean         @default(false)
+  sentAt          DateTime?
 
   attempts   Int       @default(0)
   failedAt   DateTime?
   failReason String?
 
-  subscriber Subscriber @relation(fields:[subscriberId], references:[id], onDelete:Cascade)
+  subscriber Subscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
   inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
   createdAt  DateTime   @default(now())
 
-  @@index([isSent , status])
+  @@index([isSent, status])
 }
 
 model InspectionAssignment {
@@ -414,4 +415,22 @@ model InspectionReport {
   uploadedBy Employee   @relation(fields: [uploadedById], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+// =====================================================
+// Device Limit
+// =====================================================
+model Devices {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deviceId   String
+  userAgent  String?
+  ip         String?
+  lastActive DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
 }
